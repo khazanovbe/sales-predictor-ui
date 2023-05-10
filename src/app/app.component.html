@@ -1,0 +1,34 @@
+<tui-root>
+  <div class="main">
+    <div class="filters">
+      <tui-select [formControl]="selectedTicket">
+        Ticket
+        <cdk-virtual-scroll-viewport *tuiDataList tuiScrollable class="scroll" [itemSize]="44">
+          <tui-data-list *tuiDataList>
+            <button
+                *cdkVirtualFor="let item of items"
+                tuiOption
+                [value]="item"
+            >
+                {{ item }}
+            </button>
+          </tui-data-list>
+        </cdk-virtual-scroll-viewport>
+      </tui-select>
+      <button tuiButton type="button" icon="tuiIconRotateCcw" class="button" [disabled]="false"
+        (click)="onRefresh($event)">Refresh</button>
+      <button tuiButton type="button" icon="tuiIconClose" class="button" [disabled]="false"
+        (click)="onRefresh($event)">Reset</button>
+    </div>
+    <div class="chart">
+      <p class="b-form">
+      </p>
+      <tui-axes *ngIf="computeLabels$(range) | async as labels" class="axes"
+        [verticalLines]="labels.length" [horizontalLines]="4" [axisXLabels]="labels">
+        <tui-line-days-chart class="chart" [height]="200" [value]="value" [yStringify]="yStringify"
+          [xStringify]="xStringify$ | async"></tui-line-days-chart>
+      </tui-axes>
+    </div>
+  </div>
+
+</tui-root>
