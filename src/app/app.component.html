@@ -1,16 +1,12 @@
 <tui-root>
   <div class="main">
     <div class="filters">
-      <tui-select [formControl]="selectedTicket">
-        Ticket
+      <tui-select class="b-form" [formControl]="selectedTicker">
+        Select ticker
         <cdk-virtual-scroll-viewport *tuiDataList tuiScrollable class="scroll" [itemSize]="44">
-          <tui-data-list *tuiDataList>
-            <button
-                *cdkVirtualFor="let item of items"
-                tuiOption
-                [value]="item"
-            >
-                {{ item }}
+          <tui-data-list>
+            <button *cdkVirtualFor="let ticker of tickers" tuiOption [value]="ticker">
+              {{ ticker }}
             </button>
           </tui-data-list>
         </cdk-virtual-scroll-viewport>
@@ -21,14 +17,29 @@
         (click)="onRefresh($event)">Reset</button>
     </div>
     <div class="chart">
+      <tui-input-date
+      class="input"
+        [formControl]="startDate"
+    >
+    
+        Choose start date for forecasting
+    </tui-input-date>
+    <tui-input-number
+      class="input"
+        [formControl]="countOfMonth"
+    >
+    
+        Fill in count of month to forecast
+    </tui-input-number>
       <p class="b-form">
       </p>
       <tui-axes *ngIf="computeLabels$(range) | async as labels" class="axes"
         [verticalLines]="labels.length" [horizontalLines]="4" [axisXLabels]="labels">
-        <tui-line-days-chart class="chart" [height]="200" [value]="value" [yStringify]="yStringify"
+        <tui-line-days-chart class="chart actual" [height]="200" [value]="actual" [yStringify]="yStringify"
+          [xStringify]="xStringify$ | async"></tui-line-days-chart>
+          <tui-line-days-chart class="chart predicted" [height]="200" [value]="predicted" [yStringify]="yStringify"
           [xStringify]="xStringify$ | async"></tui-line-days-chart>
       </tui-axes>
     </div>
   </div>
-
 </tui-root>

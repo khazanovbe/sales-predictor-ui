@@ -7,9 +7,10 @@ import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
-import {TuiDataListWrapperModule, TuiInputDateRangeModule, TuiSelectModule} from '@taiga-ui/kit';
+import {TuiDataListWrapperModule, TuiInputDateModule, TuiInputDateRangeModule, TuiInputNumberModule, TuiSelectModule} from '@taiga-ui/kit';
 import {TuiAxesModule, TuiLineChartModule, TuiLineDaysChartModule} from '@taiga-ui/addon-charts';
-import {ScrollingModule} from "@angular/cdk/scrolling"
+import {ScrollingModule} from "@angular/cdk/scrolling";
+import {HttpClientModule} from '@angular/common/http';
 @NgModule({
   declarations: [
     AppComponent
@@ -32,6 +33,9 @@ import {ScrollingModule} from "@angular/cdk/scrolling"
     TuiLineDaysChartModule,
     TuiButtonModule,
     ScrollingModule,
+    HttpClientModule,
+    TuiInputDateModule,
+    TuiInputNumberModule
 ],
   providers: [{provide: TUI_SANITIZER, useClass: NgDompurifySanitizer}],
   bootstrap: [AppComponent]
