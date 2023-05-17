@@ -1,14 +1,18 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, Inject } from '@angular/core';
+import { AfterViewInit, Component, Inject, ViewChild } from '@angular/core';
 import { FormControl } from '@angular/forms';
-import { TUI_DATE_FORMAT, TUI_DATE_SEPARATOR, TUI_DEFAULT_STRINGIFY, TuiContextWithImplicit, TuiDay, TuiDayLike, TuiDayRange, TuiMonth, TuiStringHandler, tuiPure } from '@taiga-ui/cdk';
+import { TuiLineDaysChartComponent } from '@taiga-ui/addon-charts';
+import { TUI_DATE_FORMAT, TUI_DATE_SEPARATOR, TUI_DEFAULT_STRINGIFY, TuiContextWithImplicit, TuiDay, TuiDayLike, TuiDayRange, TuiMapper, TuiMonth, TuiStringHandler, TuiYear, tuiPure } from '@taiga-ui/cdk';
 import { TUI_MONTHS, TuiPoint } from '@taiga-ui/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of, range } from 'rxjs';
 
 interface IForecast {
     Date: string;
     Actual: number | null;
     Forecast: number | null;
+}
+enum Months {
+    'January','February','March','April','May','June','July','August','September','October','November','December'
 }
 
 @Component({
@@ -17,37 +21,67 @@ interface IForecast {
 	styleUrls: ['./app.component.less'],
     providers: [{provide: TUI_DATE_FORMAT, useValue: 'YMD'},{provide: TUI_DATE_SEPARATOR, useValue: '-'},]
 })
-export class AppComponent {
+export class AppComponent implements AfterViewInit {
+    @ViewChild(TuiLineDaysChartComponent) chart!: TuiLineDaysChartComponent;
 	selectedTicker = new FormControl();
     startDate = new FormControl(new TuiDay(2021,1,1));
-    countOfMonth = new FormControl(0);
+    countOfMonth = new FormControl(1);
     tickers:string[]=[];
+    showLoader=false;
 
     results:IForecast[] = [];
+    actual:IForecast[] = [];
+    predicted:IForecast[] = [];
 
 	range = new TuiDayRange(
         TuiDay.currentLocal(),
         TuiDay.currentLocal().append({year: 1}),
     );
  
-    readonly maxLength: TuiDayLike = {year: 5};
+    readonly maxLength: TuiDayLike = {year: 1};
 
-	readonly yStringify: TuiStringHandler<number> = y =>
-        `${(10 * y).toLocaleString('en-US', {maximumFractionDigits: 0})} $`;
+	readonly yStringify: TuiStringHandler<number> = y =>{
+        return `${(10 * y).toLocaleString('en-US', {maximumFractionDigits: 0})} $`
+    };
 
-	readonly xStringify$: Observable<TuiStringHandler<TuiDay>> = this.months$.pipe(
-		map(
-			months =>
-				({month, day}) =>
-					`${months[month]}, ${day}`,
-		),
-	);
+	readonly xStringify: TuiStringHandler<TuiDay> = (date:TuiDay)=>{
+        return `${Months[date.month]}, ${date.day}`;
+    };
 
-	get actual(): ReadonlyArray<[TuiDay, number]> {
-        return this.computeValue(this.results.filter(day=>day.Actual));
+	get actualValues(): [TuiDay, number][] {
+        const actual = this.computeValue(this.actual);
+        const predicted = this.computeValue(this.predicted);
+        return actual.concat([...predicted].map(value=>[value[0],0]));
     }
-    get predicted(): ReadonlyArray<[TuiDay, number]> {
-        return this.computeValue(this.results.filter(day=>day.Forecast));
+    get predictedValues(): [TuiDay, number][] {
+        const actual = this.computeValue(this.actual);
+        const predictedValues = this.computeValue(this.predicted);
+        const actualZeros:[TuiDay, number][] = actual.map(v=>[v[0],0])
+        const predicted:[TuiDay, number][] = actualZeros.concat(predictedValues);
+        return predicted;
+    }
+
+    get charts(): ReadonlyArray<ReadonlyArray<[TuiDay, number]>>{
+        const actualZeros:[TuiDay, number][] = this.actualValues.map(v=>[v[0],0])
+        const predicted:[TuiDay, number][] = actualZeros.concat(this.predictedValues);
+        return [
+            this.actualValues.concat([...this.predictedValues].map(value=>[value[0],0])),
+            predicted
+    ];
+    }
+
+    get minPrice():number{
+        const prices = this.results.map(day=>{
+            if(day.Actual){
+                return day.Actual;
+            }
+            else if(day.Forecast){
+                return day.Forecast;
+            }
+            return 0;
+        });
+
+        return Math.min(...prices);
     }
 
 	constructor(@Inject(TUI_MONTHS) private readonly months$: Observable<readonly string[]>,private http: HttpClient){
@@ -58,13 +92,24 @@ export class AppComponent {
            this.onSubmit(ticker);
         });
 	}
+
+    ngAfterViewInit(): void {
+    }
 	
 	@tuiPure
     computeLabels$({from, to}: TuiDayRange): Observable<readonly string[]> {
+        const length = TuiDay.lengthBetween(from, to);
+
+        if( length>365 ){
+            return of(Array.from(
+                {length: TuiYear.lengthBetween(from, to)-1},
+                (_, i) => from.append({year: i}).year,
+            ).map(v=>v.toString()));
+        }
         return this.months$.pipe(
             map(months =>
                 Array.from(
-                    {length: TuiMonth.lengthBetween(from, to) + 1},
+                    {length: TuiMonth.lengthBetween(from, to) - 1},
                     (_, i) => months[from.append({month: i}).month],
                 ),
             ),
@@ -72,7 +117,7 @@ export class AppComponent {
     }
  
     @tuiPure
-    private computeValue(data:IForecast[]): ReadonlyArray<[TuiDay, number]> {
+    private computeValue(data:IForecast[]): [TuiDay, number][] {
         const prevDate = null;
         const prevPrice = 0;
         const results = data.map<[TuiDay, number]>((day:IForecast) =>{
@@ -89,7 +134,6 @@ export class AppComponent {
             }
             const tuiDate = new TuiDay(date.getFullYear(), date.getMonth(),date.getDate());
 
-            console.log(date.getFullYear(), date.getMonth(),date.getDate());
             return [
                 new TuiDay(date.getFullYear(), date.getMonth(),date.getDate()),
                 Math.round(price)
@@ -103,6 +147,7 @@ export class AppComponent {
         this.onSubmit(this.selectedTicker.value);
 	}
     onSubmit(ticker:string) {
+        this.showLoader=true;
         const date:TuiDay = this.startDate.value;
         const parsedDate = {year:date.year,month:'',day:'',};
         if (date.day < 10) {
@@ -125,7 +170,10 @@ export class AppComponent {
             start_date:dateString,
             n_forecast:this.countOfMonth.value*30
         }).subscribe(results=>{
+            this.showLoader=false;
             this.results = results;
+            this.actual = results.filter(day=>day.Actual);
+            this.predicted = results.filter(day=>day.Forecast);
             this.range = new TuiDayRange(
                 this.startDate.value,
                 TuiDay.currentLocal().append({month: this.countOfMonth.value}),

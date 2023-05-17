@@ -17,29 +17,27 @@
         (click)="onRefresh($event)">Reset</button>
     </div>
     <div class="chart">
-      <tui-input-date
-      class="input"
-        [formControl]="startDate"
-    >
-    
+      <tui-input-date class="input" [formControl]="startDate">
+
         Choose start date for forecasting
-    </tui-input-date>
-    <tui-input-number
-      class="input"
-        [formControl]="countOfMonth"
-    >
-    
-        Fill in count of month to forecast
-    </tui-input-number>
+      </tui-input-date>
+      <tui-input-number class="input" [formControl]="countOfMonth">
+
+        Count of month to forecast
+      </tui-input-number>
       <p class="b-form">
       </p>
-      <tui-axes *ngIf="computeLabels$(range) | async as labels" class="axes"
+      <tui-loader [overlay]="true" [showLoader]="showLoader">
+      <tui-axes [tuiLineChartHint]="hint" *ngIf="computeLabels$(range) | async as labels" class="axes"
         [verticalLines]="labels.length" [horizontalLines]="4" [axisXLabels]="labels">
-        <tui-line-days-chart class="chart actual" [height]="200" [value]="actual" [yStringify]="yStringify"
-          [xStringify]="xStringify$ | async"></tui-line-days-chart>
-          <tui-line-days-chart class="chart predicted" [height]="200" [value]="predicted" [yStringify]="yStringify"
-          [xStringify]="xStringify$ | async"></tui-line-days-chart>
+        <tui-line-days-chart  class="chart actual" [y]="minPrice-50" [height]="300" [value]="actualValues" ></tui-line-days-chart>
+          <tui-line-days-chart  class="chart predicted"[y]="minPrice-50" [height]="300" [value]="predictedValues" ></tui-line-days-chart>
       </tui-axes>
+      </tui-loader>
     </div>
   </div>
 </tui-root>
+
+<ng-template #hint>
+  hint
+</ng-template>

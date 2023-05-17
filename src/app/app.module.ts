@@ -1,5 +1,5 @@
 import { NgDompurifySanitizer } from "@tinkoff/ng-dompurify";
-import { TuiRootModule, TuiDialogModule, TuiAlertModule, TUI_SANITIZER, TuiDataListModule, TuiButtonModule } from "@taiga-ui/core";
+import { TuiRootModule, TuiDialogModule, TuiAlertModule, TUI_SANITIZER, TuiDataListModule, TuiButtonModule, TuiFormatNumberPipe, TuiFormatNumberPipeModule, TuiLoaderModule } from "@taiga-ui/core";
 import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
@@ -11,9 +11,11 @@ import {TuiDataListWrapperModule, TuiInputDateModule, TuiInputDateRangeModule, T
 import {TuiAxesModule, TuiLineChartModule, TuiLineDaysChartModule} from '@taiga-ui/addon-charts';
 import {ScrollingModule} from "@angular/cdk/scrolling";
 import {HttpClientModule} from '@angular/common/http';
+import { TuiMapperPipeModule } from "@taiga-ui/cdk";
+
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
   ],
   imports: [
     BrowserModule,
@@ -35,7 +37,9 @@ import {HttpClientModule} from '@angular/common/http';
     ScrollingModule,
     HttpClientModule,
     TuiInputDateModule,
-    TuiInputNumberModule
+    TuiInputNumberModule,
+    TuiMapperPipeModule,
+    TuiLoaderModule,
 ],
   providers: [{provide: TUI_SANITIZER, useClass: NgDompurifySanitizer}],
   bootstrap: [AppComponent]
