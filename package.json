@@ -19,6 +19,7 @@
     "@angular/platform-browser": "~13.3.0",
     "@angular/platform-browser-dynamic": "~13.3.0",
     "@angular/router": "~13.3.0",
+    "@canvasjs/charts": "^3.7.6",
     "@taiga-ui/addon-charts": "^3.26.0",
     "@taiga-ui/addon-commerce": "^3.26.0",
     "@taiga-ui/addon-doc": "^3.26.0",
