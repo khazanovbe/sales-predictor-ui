@@ -42,7 +42,7 @@
               [styles]="{width: '100%', height:'360px'}"></canvasjs-chart>
           </div>
         </tui-loader>
-        <button *ngIf="maxIncome['income']>desiredIncome.value" tuiAction [icon]="tuiIconCheck" type="button" class="action">
+        <button *ngIf="maxIncome['income']>desiredIncome.value" tuiAction [icon]="tuiIconStarLarge" type="button" class="action best">
           Best decision is to buy {{maxIncome['ticker']}}, expected income {{maxIncome['income'].toFixed(1)}}%
         </button>
         <button *ngFor="let ticker of toBuy" tuiAction [icon]="tuiIconCheck" type="button" class="action">

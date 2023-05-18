@@ -43,7 +43,8 @@ export const CanvasJSChart = CanvasJSAngularChart.CanvasJSChart;
     TuiLoaderModule,
     TuiActionModule,
     TuiMultiSelectModule,
-    TuiTextfieldControllerModule
+    TuiTextfieldControllerModule,
+    TuiAlertModule
 ],
   providers: [{provide: TUI_SANITIZER, useClass: NgDompurifySanitizer}],
   bootstrap: [AppComponent]
