@@ -1,10 +1,57 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, Inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, ViewChild } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { TuiDay } from '@taiga-ui/cdk';
 import { TUI_MONTHS, TuiPoint } from '@taiga-ui/core';
 import { start } from 'repl';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, from, map, mergeMap, of } from 'rxjs';
+import { CanvasJSChart } from 'src/assets/canvasjs.angular.component';
+
+export interface IChartData {
+    type?:               string;
+    showInLegend?:       boolean;
+    name?:               string;
+    xValueFormatString?: string;
+    dataPoints?:         DataPoint[];
+    markerSize?:         number;
+}
+
+export interface DataPoint {
+    x?: Date;
+    y?: number;
+}
+
+export interface IChartConfig {
+    animationEnabled?: boolean;
+    theme?:            string;
+    title?:            Title;
+    axisX?:            AxisX;
+    axisY?:            AxisY;
+    toolTip?:          ToolTip;
+    legend?:           Legend;
+    data?:             IChartData[];
+}
+
+export interface AxisX {
+    valueFormatString?: string;
+}
+
+export interface AxisY {
+    title?: string;
+}
+
+export interface Legend {
+    cursor?: string;
+    itemclick?:Function;
+}
+
+export interface Title {
+    text?: string;
+}
+
+export interface ToolTip {
+    shared?: boolean;
+}
 
 interface IForecast {
     Date: string;
@@ -18,35 +65,48 @@ interface IForecast {
 	styleUrls: ['./app.component.less']
 })
 export class AppComponent {
+    @ViewChild(CanvasJSChart) chartComponent!:CanvasJSChart;
     tickersWithCategory={};
-	selectedTicker = new FormControl();
+	selectedTicker = new FormControl([]);
     category = new FormControl();
     startDate = new FormControl(new TuiDay(2021,1,1));
     countOfMonth = new FormControl(1);
     desiredIncome= new FormControl(12);
     tickers:string[]=[];
     showLoader=false;
-    expectedIncome:number=0;
-    toBuy:boolean = false;
-    toSell:boolean = false;
+    expectedIncome:object={};
+    toBuy:string[] = [];
+    toSell:string[] = [];
 
     categories :string[]=[];
 
-    results:IForecast[] = [];
+    results:object = {};
     actual:IForecast[] = [];
     predicted:IForecast[] = [];
     tuiIconCheck = 'tuiIconCheck';
     tuiIconClose = 'tuiIconClose';
 
-	constructor(private http: HttpClient){
+    get maxIncome():any{
+        const income = Math.max(...Object.values(this.expectedIncome));
+        if(income<0){
+            return 0;
+        }
+        // @ts-ignore
+        const ticker = Object.keys(this.expectedIncome).find(ticker=>this.expectedIncome[ticker]===income);
+        return {income:income,ticker:ticker};
+    }
+
+    incomeByTicker(ticker:string):number{
+        //@ts-ignore
+        return this.expectedIncome[ticker];
+    }
+
+	constructor(private http: HttpClient,private cd: ChangeDetectorRef){
         this.http.get('/api/get-tickers').subscribe((tickers)=>{
             this.tickers=Object.keys(tickers);
             this.tickersWithCategory = tickers;
             // @ts-ignore
             this.categories = Array.from(new Set(Object.values(tickers)));
-        });
-        this.selectedTicker.valueChanges.subscribe((ticker)=>{
-           this.onSubmit(ticker);
         });
         this.category.valueChanges.subscribe((category:string)=>{
             if(this.categories){
@@ -57,10 +117,10 @@ export class AppComponent {
 	}
 	
 	onRefresh($event: MouseEvent) {
-        this.onSubmit(this.selectedTicker.value);
+        this.onSubmit();
 	}
 
-    onSubmit(ticker:string) {
+    onSubmit() {
         this.showLoader=true;
         const date:TuiDay = this.startDate.value;
         const parsedDate = {year:date.year,month:'',day:'',};
@@ -79,55 +139,68 @@ export class AppComponent {
         }
         const dateString = `${parsedDate.year}-${parsedDate.month}-${parsedDate.day}`;
 
-        this.http.post<IForecast[]>('/api/evaluate',{
-            ticker:ticker,
-            start_date:dateString,
-            n_forecast:this.countOfMonth.value*30
-        }).subscribe(results=>{
-            this.showLoader=false;
-            this.results = results;
-            const actual:IForecast[] = results.filter(day=>day.Actual);
-            const predicted = results.filter(day=>day.Forecast);
-            this.chartOptions.next(
-                {
-                    ...this.chartOptions.value,
-                    data: [{
-                        type: "line",
-                        showInLegend: true,
-                        name: "Actual price",
-                        xValueFormatString: "MMM DD, YYYY",
-                        //@ts-ignore
-                        dataPoints: actual.map(day=>({x:new Date(day.Date), y:day.Actual}))
-                      }, {
-                        type: "line",
-                        showInLegend: true,
-                        name: "Predicted price",
-                        xValueFormatString: "MMM DD, YYYY",
-                        //@ts-ignore
-                        dataPoints: predicted.map(day=>({x:new Date(day.Date), y:day.Forecast})),
-                        markerSize:0
-                      }]
-                }
-            );
-            this.calculateIncome(actual[actual.length-1].Actual??0,predicted[predicted.length-1].Forecast??0);
-        });
+        this.chartOptions.value.data = [];
+        from(this.selectedTicker.value).pipe(
+            // @ts-ignore
+            mergeMap((ticker:string)=>{
+                return this.http.post<IForecast[]>('/api/evaluate',{
+                    ticker:ticker,
+                    start_date:dateString,
+                    n_forecast:this.countOfMonth.value*30
+                }).pipe(
+                    map(results=>{
+                        this.showLoader=false;
+                        // @ts-ignore
+                        this.results[ticker] = results;
+                        const actual:IForecast[] = results.filter(day=>day.Actual);
+                        const predicted:IForecast[] = results.filter(day=>day.Forecast);
+
+                        this.chartOptions.next(
+                            {
+                                ...this.chartOptions.value,
+                                data: [
+                                    //@ts-ignore
+                                    ...this.chartOptions.value.data,
+                                    {
+                                    type: "line",
+                                    showInLegend: true,
+                                    name: `Actual price of ${ticker}`,
+                                    xValueFormatString: "MMM DD, YYYY",
+                                    dataPoints: actual.map(day=>({x:new Date(day.Date), y:day.Actual}))
+                                  }, 
+                                    {
+                                    type: "line",
+                                    showInLegend: true,
+                                    name: `Predicted price of ${ticker}`,
+                                    xValueFormatString: "MMM DD, YYYY",
+                                    dataPoints: predicted.map(day=>({x:new Date(day.Date), y:day.Forecast})),
+                                    markerSize:0
+                                  }]
+                            }
+                        );
+                        this.calculateIncome(ticker,actual[actual.length-1].Actual??0,predicted[predicted.length-1].Forecast??0);
+                        this.chartComponent.detectChanges();
+                    })
+                );
+            })
+        ).subscribe();
     }
 
-    calculateIncome(startPrice:number,endPrice:number){
-        this.expectedIncome = (endPrice-startPrice)/startPrice*100;
-        if(this.expectedIncome>=this.desiredIncome.value){
-            this.toBuy=true;
-            this.toSell=false;
+    calculateIncome(ticker:string,startPrice:number,endPrice:number){
+        const income = (endPrice-startPrice)/startPrice*100;
+        // @ts-ignore
+        this.expectedIncome[ticker] = income;
+        if(income>=this.desiredIncome.value){
+            this.toBuy.push(ticker);
         }
         else{
-            this.toBuy=false;
-            this.toSell=true;
+            this.toSell.push(ticker);
         }
     }
 
     chart: any;
 	
-	chartOptions = new BehaviorSubject({
+	chartOptions = new BehaviorSubject<IChartConfig>({
 	  animationEnabled: true,
 	  theme: "light2",
 	  title:{
@@ -153,20 +226,6 @@ export class AppComponent {
 			e.chart.render();
 		}
 	  },
-	  data: [{
-		type: "line",
-		showInLegend: true,
-		name: "Actual price",
-		xValueFormatString: "MMM DD, YYYY",
-		dataPoints: [],
-        dotted: false
-	  }, {
-		type: "line",
-		showInLegend: true,
-		name: "Predicted price",
-		xValueFormatString: "MMM DD, YYYY",
-		dataPoints: [],
-        dotted: false
-	  }]
+	  data: []
 	});	
 }

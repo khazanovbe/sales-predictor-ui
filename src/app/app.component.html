@@ -11,16 +11,12 @@
           </tui-data-list>
         </cdk-virtual-scroll-viewport>
       </tui-select>
-      <tui-select class="b-form" [formControl]="selectedTicker">
+      <tui-multi-select [tuiTextfieldLabelOutside]="true" class="b-form"
+        [formControl]="selectedTicker">
         Select ticker
-        <cdk-virtual-scroll-viewport *tuiDataList tuiScrollable class="scroll" [itemSize]="44">
-          <tui-data-list>
-            <button *cdkVirtualFor="let ticker of tickers" tuiOption [value]="ticker">
-              {{ ticker }}
-            </button>
-          </tui-data-list>
-        </cdk-virtual-scroll-viewport>
-      </tui-select>
+        <tui-data-list-wrapper *tuiDataList tuiMultiSelectGroup
+          [items]="tickers"></tui-data-list-wrapper>
+      </tui-multi-select>
       <button tuiButton type="button" icon="tuiIconRotateCcw" class="button" [disabled]="false"
         (click)="onRefresh($event)">Refresh</button>
     </div>
@@ -30,11 +26,11 @@
 
           Choose start date
         </tui-input-date>
-        <tui-input-number class="input" [formControl]="countOfMonth">
+        <tui-input-number class="input" [min]="1" [formControl]="countOfMonth">
 
           Count of month to forecast
         </tui-input-number>
-        <tui-input-number class="input" [formControl]="desiredIncome">
+        <tui-input-number class="input" [min]="1" [formControl]="desiredIncome">
 
           Desired income (percents)
         </tui-input-number>
@@ -46,11 +42,14 @@
               [styles]="{width: '100%', height:'360px'}"></canvasjs-chart>
           </div>
         </tui-loader>
-        <button *ngIf="toBuy" tuiAction [icon]="tuiIconCheck" type="button" class="action">
-          We recommend to buy, expected income {{expectedIncome.toFixed(1)}}%
+        <button *ngIf="maxIncome['income']>desiredIncome.value" tuiAction [icon]="tuiIconCheck" type="button" class="action">
+          Best decision is to buy {{maxIncome['ticker']}}, expected income {{maxIncome['income'].toFixed(1)}}%
         </button>
-        <button *ngIf="toSell" tuiAction [icon]="tuiIconClose" type="button" class="action">
-          We do not recommend buying, expected income {{expectedIncome.toFixed(1)}}%
+        <button *ngFor="let ticker of toBuy" tuiAction [icon]="tuiIconCheck" type="button" class="action">
+          We recommend to buy {{ticker}}, expected income {{incomeByTicker(ticker).toFixed(1)}}%
+        </button>
+        <button *ngFor="let ticker of toSell" tuiAction [icon]="tuiIconClose" type="button" class="action">
+          We do not recommend buying {{ticker}}, expected income {{incomeByTicker(ticker).toFixed(1)}}%
         </button>
       </div>
 

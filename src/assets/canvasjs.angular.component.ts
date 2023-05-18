@@ -10,7 +10,7 @@ https://canvasjs.com/license/
 /*tslint:disable*/
 /*eslint-disable*/
 /*jshint ignore:start*/
-import { Component, AfterViewInit, OnChanges, OnDestroy, Input, Output, EventEmitter } from '@angular/core';
+import { Component, AfterViewInit, OnChanges, OnDestroy, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 declare var require: any;
 var CanvasJS = require('./canvasjs.min');
 
@@ -34,7 +34,7 @@ class CanvasJSChart implements AfterViewInit, OnChanges, OnDestroy {
 	@Output()
 		chartInstance = new EventEmitter<object>();
 		
-	constructor() {
+	constructor(private cd: ChangeDetectorRef) {
 		this.options = this.options ? this.options : {};
 		this.styles = this.styles ? this.styles : { width: "100%", position: "relative" };
 		this.styles.height = this.options.height ? this.options.height + "px" : "400px";
@@ -50,12 +50,18 @@ class CanvasJSChart implements AfterViewInit, OnChanges, OnDestroy {
 	
 	ngOnChanges() {				
 		//Update Chart Options & Render
+		console.log(this.options);
 		if(this.shouldUpdateChart && this.chart) {
 			this.chart.options = this.options;
 			this.chart.render();
 			this.shouldUpdateChart = false;
 			this.prevChartOptions = this.options;
 		}
+	}
+
+	detectChanges(){
+		this.shouldUpdateChart = true;
+		this.cd.detectChanges();
 	}
 	
 	ngAfterViewInit() {		

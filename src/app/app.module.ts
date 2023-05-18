@@ -1,5 +1,5 @@
 import { NgDompurifySanitizer } from "@tinkoff/ng-dompurify";
-import { TuiRootModule, TuiDialogModule, TuiAlertModule, TUI_SANITIZER, TuiDataListModule, TuiButtonModule, TuiFormatNumberPipe, TuiFormatNumberPipeModule, TuiLoaderModule } from "@taiga-ui/core";
+import { TuiRootModule, TuiDialogModule, TuiAlertModule, TUI_SANITIZER, TuiDataListModule, TuiButtonModule, TuiFormatNumberPipe, TuiFormatNumberPipeModule, TuiLoaderModule, TuiTextfieldControllerModule } from "@taiga-ui/core";
 import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
@@ -7,7 +7,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
-import {TuiActionModule, TuiDataListWrapperModule, TuiInputDateModule, TuiInputDateRangeModule, TuiInputNumberModule, TuiIslandModule, TuiSelectModule} from '@taiga-ui/kit';
+import {TuiActionModule, TuiDataListWrapperModule, TuiInputDateModule, TuiInputDateRangeModule, TuiInputNumberModule, TuiIslandModule, TuiMultiSelectModule, TuiSelectModule} from '@taiga-ui/kit';
 import {TuiAxesModule, TuiLineChartModule, TuiLineDaysChartModule} from '@taiga-ui/addon-charts';
 import {ScrollingModule} from "@angular/cdk/scrolling";
 import {HttpClientModule} from '@angular/common/http';
@@ -41,8 +41,9 @@ export const CanvasJSChart = CanvasJSAngularChart.CanvasJSChart;
     TuiInputNumberModule,
     TuiMapperPipeModule,
     TuiLoaderModule,
-    TuiActionModule
-    
+    TuiActionModule,
+    TuiMultiSelectModule,
+    TuiTextfieldControllerModule
 ],
   providers: [{provide: TUI_SANITIZER, useClass: NgDompurifySanitizer}],
   bootstrap: [AppComponent]
