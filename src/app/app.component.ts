@@ -121,6 +121,14 @@ export class AppComponent {
         this.onSubmit();
     }
 
+    onReset(){
+        this.selectedTicker.setValue([]);
+        this.category.setValue(null);
+        this.startDate.setValue(new TuiDay(2021, 1, 1));
+        this.countOfMonth.setValue(1);
+        this.desiredIncome.setValue(12);
+    }
+
     onSubmit() {
         this.showLoader = true;
         const date: TuiDay = this.startDate.value;
